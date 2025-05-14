@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "com.unity.ads": "4.4.2",
+    "com.unity.textmeshpro": "3.0.6",
+    "com.google.firebase.app": "9.0.0",
+    "com.google.firebase.firestore": "3.2.0",
+    "com.google.firebase.auth": "9.0.0",
+    "com.google.firebase.storage": "9.0.0",
+    "com.google.firebase.messaging": "9.0.0",
+    "com.google.firebase.analytics": "9.0.0",
+    "com.unity.xr.coreutils": "3.0.2",
+    "com.unity.xr.arcore": "5.0.0",
+    "com.blockly.lite": "1.0.0"
+  }
+}
