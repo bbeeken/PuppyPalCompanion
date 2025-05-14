@@ -1,35 +1,49 @@
 using UnityEngine;
 using UnityEngine.Advertisements;
 
+/// <summary>
+/// Wraps a rewarded-offerwall ad placement.
+/// Load on Awake, then ShowWall() triggers display.
+/// </summary>
+[DisallowMultipleComponent]
 public sealed class OfferwallManager : MonoBehaviour, IUnityAdsLoadListener, IUnityAdsShowListener
 {
-#if UNITY_ANDROID
-    private const string WALL_ID = "PPC_Offerwall";
-#endif
+    [Header("Ad Configuration")]
+    [Tooltip("Placement ID for the offerwall in Unity Ads dashboard")]
+    [SerializeField] private string placementId = "PPC_Offerwall";
 
     private void Awake()
     {
-        Advertisement.Load(WALL_ID, this);
+        Advertisement.Load(placementId, this);
     }
 
+    /// <summary>
+    /// Display the offerwall; Unity will handle rewards as configured.
+    /// </summary>
     public void ShowWall()
     {
-        if (Advertisement.IsReady(WALL_ID))
-            Advertisement.Show(WALL_ID, this);
+        if (Advertisement.IsReady(placementId))
+            Advertisement.Show(placementId, this);
+        else
+            Debug.LogWarning("OfferwallManager: Offerwall not ready");
     }
 
-    public void OnUnityAdsAdLoaded(string placementId) { }
+    // IUnityAdsLoadListener
+    public void OnUnityAdsAdLoaded(string id) { /* no-op */ }
+    public void OnUnityAdsFailedToLoad(string id, UnityAdsLoadError error, string message)
+        => Debug.LogError($"Offerwall load failed ({id}): {message}");
 
-    public void OnUnityAdsFailedToLoad(string placementId, UnityAdsLoadError error, string message) { }
+    // IUnityAdsShowListener
+    public void OnUnityAdsShowFailure(string id, UnityAdsShowError error, string message)
+        => Debug.LogError($"Offerwall show failed ({id}): {message}");
 
-    public void OnUnityAdsShowFailure(string placementId, UnityAdsShowError error, string message) { }
+    public void OnUnityAdsShowStart(string id) { /* no-op */ }
+    public void OnUnityAdsShowClick(string id) { /* no-op */ }
 
-    public void OnUnityAdsShowStart(string placementId) { }
-
-    public void OnUnityAdsShowClick(string placementId) { }
-
-    public void OnUnityAdsShowComplete(string placementId, UnityAdsShowCompletionState state)
+    public void OnUnityAdsShowComplete(string id, UnityAdsShowCompletionState state)
     {
+        // Reload the offerwall for next display
         Advertisement.Load(placementId, this);
+        EventBus.Publish("offerwall_completed", state);
     }
 }

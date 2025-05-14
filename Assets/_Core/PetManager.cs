@@ -8,29 +8,25 @@ public sealed class PetData
 {
     public int hunger = 100, happiness = 100, hygiene = 100;
     public int level = 0, xp = 0, coins = 50;
-    public int[] accessories = Array.Empty<int>();
+    public List<string> accessories = new List<string>();
 }
 
 [DisallowMultipleComponent]
 public sealed class PetManager : MonoBehaviour
 {
-    [Header("Stat Bars")]
+    [Header("UI References")]
     [SerializeField] private StatBar hungerBar;
     [SerializeField] private StatBar happinessBar;
     [SerializeField] private StatBar hygieneBar;
-
-    [Header("UI")]
     [SerializeField] private TMPro.TextMeshProUGUI levelText;
     [SerializeField] private Animator petAnimator;
 
     [Header("Config")]
-    [Range(5, 120)]
-    [SerializeField] private int decayIntervalSec = 60;
+    [SerializeField, Range(5, 120)] private int decayIntervalSec = 60;
     [SerializeField] private int maxStat = 100;
     [SerializeField] private int xpPerTask = 5;
     [SerializeField] private int xpPerLevel = 100;
-    [Range(0, 100)]
-    [SerializeField] private int rareDropPercent = 5;
+    [SerializeField, Range(0,100)] private int rareDropPercent = 5;
 
     private PetData data = new PetData();
     private float decayTimer;
@@ -55,9 +51,10 @@ public sealed class PetManager : MonoBehaviour
         }
     }
 
-    public void Feed(int amount = 20) => ModifyStat(ref data.hunger, amount);
-    public void Play(int amount = 15) => ModifyStat(ref data.happiness, amount);
-    public void Clean(int amount = 25) => ModifyStat(ref data.hygiene, amount);
+    // Public methods for UI buttons
+    public void Feed(int amount = 20)  => ModifyStat(ref data.hunger,  amount);
+    public void Play(int amount = 15)  => ModifyStat(ref data.happiness, amount);
+    public void Clean(int amount = 25) => ModifyStat(ref data.hygiene,   amount);
 
     private void ModifyStat(ref int stat, int delta)
     {
@@ -69,7 +66,9 @@ public sealed class PetManager : MonoBehaviour
 
     private void GrantRewards()
     {
+        // Random coin bonus
         data.coins += Random.Range(3, 8);
+        // XP and leveling
         data.xp += xpPerTask;
         if (data.xp >= xpPerLevel)
         {
@@ -77,11 +76,12 @@ public sealed class PetManager : MonoBehaviour
             data.level++;
             petAnimator.SetInteger("Stage", Mathf.Clamp(data.level / 5, 0, 2));
         }
+        // Occasional rare accessory
         if (Random.Range(0, 100) < rareDropPercent)
         {
-            var id = "rare_" + Guid.NewGuid().ToString();
-            Array.Resize(ref data.accessories, data.accessories.Length + 1);
-            data.accessories[^1] = id.GetHashCode();
+            string id = $"rare_{Guid.NewGuid():N}";
+            data.accessories.Add(id);
+            EventBus.Publish("accessory_unlocked", id);
         }
     }
 
@@ -95,23 +95,14 @@ public sealed class PetManager : MonoBehaviour
 
     private void Save()
     {
-        var path = Path.Combine(Application.persistentDataPath, "pet_state.json");
-        File.WriteAllText(path, JsonUtility.ToJson(data));
+        string path = Path.Combine(Application.persistentDataPath, "pet_state.json");
+        File.WriteAllText(path, JsonUtility.ToJson(data), System.Text.Encoding.UTF8);
     }
 
     private void Load()
     {
-        var path = Path.Combine(Application.persistentDataPath, "pet_state.json");
+        string path = Path.Combine(Application.persistentDataPath, "pet_state.json");
         if (File.Exists(path))
             data = JsonUtility.FromJson<PetData>(File.ReadAllText(path));
-    }
-
-    public int Coins => data.coins;
-    public bool SpendCoins(int amount)
-    {
-        if (data.coins < amount) return false;
-        data.coins -= amount;
-        Save();
-        return true;
     }
 }
